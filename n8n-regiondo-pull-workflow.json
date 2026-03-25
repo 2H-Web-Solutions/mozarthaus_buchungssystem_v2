@@ -35,7 +35,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const crypto = require('crypto');\n\nconst publicKey = 'MO43f21d011626';\nconst privateKey = '43f21d0f4ba8f05b111626d551fd8509160d0';\n// Regiondo needs PHP Unix Timestamp (10 digits, seconds) not JS milliseconds (13 digits)\nconst timestamp = Math.floor(Date.now() / 1000).toString();\n\n// DOCS: UTC unix timestamp + YOU_PUBLIC_KEY + stringified params\nconst stringToHash = timestamp + publicKey;\n\n// Create HMAC SHA256 signature\nconst hash = crypto.createHmac('sha256', privateKey).update(stringToHash).digest('hex');\n\nreturn {\n  json: {\n    ...$input.item.json,\n    'X-API-ID': publicKey,\n    'X-API-TIME': timestamp,\n    'X-API-HASH': hash\n  }\n};"
+        "jsCode": "const crypto = require('crypto');\n\nconst publicKey = 'MO43f21d011626';\nconst privateKey = '43f21d0f4ba8f05b111626d551fd8509160d0';\nconst timestamp = Math.floor(Date.now() / 1000).toString();\n\nconst d1 = new Date();\nconst dt_from = d1.toISOString().split('T')[0];\nconst d2 = new Date();\nd2.setMonth(d2.getMonth() + 6);\nconst dt_to = d2.toISOString().split('T')[0];\n\nconst queryString = `dt_from=${dt_from}&dt_to=${dt_to}`;\nconst stringToHash = timestamp + publicKey + queryString;\nconst hash = crypto.createHmac('sha256', privateKey).update(stringToHash).digest('hex');\n\nreturn {\n  json: {\n    ...$input.item.json,\n    'X-API-ID': publicKey,\n    'X-API-TIME': timestamp,\n    'X-API-HASH': hash,\n    'dt_from': dt_from,\n    'dt_to': dt_to\n  }\n};"
       },
       "name": "Generate Regiondo Auth HMAC",
       "type": "n8n-nodes-base.code",
@@ -44,13 +44,20 @@
     },
     {
       "parameters": {
-        "url": "https://api.regiondo.com/v1/availabilities",
+        "url": "https://api.regiondo.com/v1/products/availabilities/31903",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             { "name": "X-API-ID", "value": "={{$json[\"X-API-ID\"]}}" },
             { "name": "X-API-TIME", "value": "={{$json[\"X-API-TIME\"]}}" },
             { "name": "X-API-HASH", "value": "={{$json[\"X-API-HASH\"]}}" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "dt_from", "value": "={{$json[\"dt_from\"]}}" },
+            { "name": "dt_to", "value": "={{$json[\"dt_to\"]}}" }
           ]
         }
       },
@@ -61,7 +68,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const events = ($input.item.json.data || $input.item.json) || [];\nconst mappedEvents = [];\n\nfor (const event of events) {\n  const eventId = 'event_' + (event.id || Date.now() + Math.random().toString(36).substring(7));\n  mappedEvents.push({\n    json: {\n      id: eventId,\n      date: event.date || event.start_date || new Date().toISOString().split('T')[0],\n      time: event.time || event.start_time || '19:30',\n      title: event.product_name || 'Mozart Ensemble',\n      status: 'active',\n      updatedAt: new Date().toISOString()\n    }\n  });\n}\nreturn mappedEvents;"
+        "jsCode": "const data = $input.item.json.data || {};\nconst mappedEvents = [];\n\nfor (const [date, times] of Object.entries(data)) {\n  for (const time of times) {\n    // Generiere eine eindeutige ID aus Datum und Zeit, um Duplikate bei mehrfachem Sync zu verhindern\n    const eventId = `event_${date.replace(/-/g, '')}_${time.replace(/:/g, '')}`;\n    \n    mappedEvents.push({\n      json: {\n        id: eventId,\n        date: date,\n        time: time.substring(0, 5), // \"20:00:00\" wird zu \"20:00\"\n        title: 'Mozart Ensemble',\n        status: 'active',\n        updatedAt: new Date().toISOString()\n      }\n    });\n  }\n}\n\nreturn mappedEvents;"
       },
       "name": "Data Mapping",
       "type": "n8n-nodes-base.code",
