@@ -80,12 +80,19 @@ export function BookingFlow() {
 
     // Fetch live Events
     const unsubEvents = onSnapshot(query(collection(db, `apps/${APP_ID}/events`), orderBy('date', 'asc')), snap => {
-      const evts: Event[] = [];
+      const evts: any[] = [];
       const now = Date.now();
       snap.forEach(d => {
-         const ev = { id: d.id, ...d.data() } as Event;
+         const data = d.data();
+         const ev = { id: d.id, ...data };
+         let eventTime = 0;
+         if (data.date && typeof data.date.toDate === 'function') {
+           eventTime = data.date.toMillis();
+         } else if (data.date) {
+           eventTime = new Date(`${data.date}T${data.time || '00:00'}`).getTime();
+         }
          // Optional: filter past events
-         if (ev.date.toMillis() >= now) evts.push(ev);
+         if (!eventTime || eventTime >= now) evts.push(ev);
       });
       setAvailableEvents(evts);
     });
@@ -114,11 +121,16 @@ export function BookingFlow() {
 
       const selectedEvent = availableEvents.find(e => e.id === selectedEventId);
 
+      const eventDateRaw = selectedEvent?.date;
+      const eventDateStr = eventDateRaw 
+        ? (typeof eventDateRaw.toDate === 'function' ? eventDateRaw.toDate().toISOString() : eventDateRaw as string) 
+        : '';
+
       await executeBookingTransaction({
         eventId: derivedEventId,
         variantId: variant,
         eventTitle: selectedEvent?.title || '',
-        eventDate: selectedEvent?.date ? selectedEvent.date.toDate().toISOString() : '',
+        eventDate: eventDateStr,
         partnerId: selectedPartnerId || null,
         isB2B: !!selectedPartnerId,
         source: selectedPartnerId ? 'b2b' : 'manual',
@@ -172,11 +184,20 @@ export function BookingFlow() {
                className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none bg-gray-50 text-gray-900 font-bold cursor-pointer transition-shadow shadow-inner"
              >
                <option value="">-- Bitte wählen --</option>
-               {availableEvents.map(e => (
-                 <option key={e.id} value={e.id}>
-                   {e.date.toDate().toLocaleString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr — {e.title}
-                 </option>
-               ))}
+               {availableEvents.map(e => {
+                 let displayDate = '';
+                 if (e.date && typeof e.date.toDate === 'function') {
+                   displayDate = e.date.toDate().toLocaleDateString('de-AT');
+                 } else if (e.date) {
+                   displayDate = new Date(e.date as string).toLocaleDateString('de-AT');
+                 }
+                 
+                 return (
+                   <option key={e.id} value={e.id}>
+                     {displayDate} {(e as any).time ? `- ${(e as any).time} Uhr` : ''} — {e.title || 'Mozart Ensemble'}
+                   </option>
+                 );
+               })}
              </select>
            </div>
         </div>
