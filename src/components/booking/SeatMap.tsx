@@ -12,9 +12,10 @@ interface SeatMapProps {
   requiredSeats: number;
   selectedSeats: string[];
   onSeatSelect: (seatIds: string[]) => void;
+  catCounts: { catA: number; catB: number; student: number };
 }
 
-export function SeatMap({ eventId, requiredSeats, selectedSeats, onSeatSelect }: SeatMapProps) {
+export function SeatMap({ eventId, requiredSeats, selectedSeats, onSeatSelect, catCounts }: SeatMapProps) {
   const [seats, setSeats] = useState<Record<string, Seat>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
@@ -79,6 +80,14 @@ export function SeatMap({ eventId, requiredSeats, selectedSeats, onSeatSelect }:
   // Warning when constraints strictly block progression
   const seatsMissing = requiredSeats - selectedSeats.length;
 
+  const getSeatColor = (seatId: string) => {
+    const index = selectedSeats.indexOf(seatId);
+    if (index === -1) return null;
+    if (index < catCounts.catA) return 'bg-amber-500 ring-amber-500/50';
+    if (index < catCounts.catA + catCounts.catB) return 'bg-blue-500 ring-blue-500/50';
+    return 'bg-emerald-500 ring-emerald-500/50';
+  };
+
   return (
     <div className="w-full bg-white border border-gray-200 rounded-xl p-6 shadow-inner relative">
       
@@ -117,7 +126,8 @@ export function SeatMap({ eventId, requiredSeats, selectedSeats, onSeatSelect }:
                     let btnClass = "w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold transition-all ";
                     
                     if (isSelected) {
-                      btnClass += "bg-brand-primary text-white shadow-lg ring-2 ring-brand-primary/50 transform scale-110";
+                      const colorClass = getSeatColor(s.id);
+                      btnClass += `${colorClass} text-white shadow-lg ring-2 transform scale-110`;
                     } else if (isAvailable) {
                       btnClass += "bg-white border-2 border-gray-300 text-gray-700 hover:border-brand-primary hover:text-brand-primary cursor-pointer active:scale-95";
                     } else {
@@ -142,9 +152,11 @@ export function SeatMap({ eventId, requiredSeats, selectedSeats, onSeatSelect }:
               </div>
             ))}
           </div>
-          <div className="mt-8 pt-4 border-t border-gray-200 flex justify-center gap-6 text-sm font-medium text-gray-600">
+          <div className="mt-8 pt-4 border-t border-gray-200 flex justify-center gap-6 text-sm font-medium text-gray-600 flex-wrap">
             <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full border-2 border-gray-300 bg-white"></div> Frei</div>
-            <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-brand-primary shadow-sm ring-2 ring-brand-primary/30"></div> Aktiv ({selectedSeats.length}/{requiredSeats})</div>
+            <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-amber-500 shadow-sm ring-2 ring-amber-500/30"></div> Kat A</div>
+            <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-blue-500 shadow-sm ring-2 ring-blue-500/30"></div> Kat B</div>
+            <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-emerald-500 shadow-sm ring-2 ring-emerald-500/30"></div> Student</div>
             <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-gray-200 border border-gray-300 opacity-60"></div> Gesperrt</div>
           </div>
         </div>

@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Standard App Rules (Development Mode)
+    // Temporär auf "true" gesetzt, damit das Buchungssystem ohne Login speichern kann.
+    match /apps/{appId}/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 2. Public Reports
+    match /apps/{appId}/public_reports/{reportId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // 3. GLOBAL ACCESS (Collection Group Queries)
+    match /{path=**}/{collectionName}/{docId} {
+      allow read, write: if true;
+    }
+    
+  }
+}

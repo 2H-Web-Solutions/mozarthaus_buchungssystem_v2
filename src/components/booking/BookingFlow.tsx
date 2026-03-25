@@ -83,9 +83,9 @@ export function BookingFlow() {
       
       setSuccess(true);
       setTimeout(() => navigate('/bookings'), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Schwerer Fehler bei der Transaktion. Bitte Konsole überprüfen.");
+      alert("Schwerer Fehler bei der Transaktion: " + (err?.message || JSON.stringify(err)));
     } finally {
       setIsSubmitting(false);
     }
@@ -170,7 +170,10 @@ export function BookingFlow() {
            {/* Cat A */}
            <div className="p-6 border border-gray-200 rounded-2xl bg-gray-50 flex flex-col items-center justify-between shadow-sm">
              <div className="text-center mb-6">
-                <span className="block text-xl font-bold text-gray-900 mb-1">Kategorie A</span>
+                <span className="block text-xl font-bold text-gray-900 mb-1">
+                  <div className="w-4 h-4 rounded-full bg-amber-500 shadow-sm inline-block mr-2"></div>
+                  Kategorie A
+                </span>
                 <span className="block text-sm text-gray-500 font-medium">{priceCatA.toFixed(2)} € pro Ticket</span>
              </div>
              <div className="flex items-center gap-5">
@@ -183,7 +186,10 @@ export function BookingFlow() {
            {/* Cat B */}
            <div className="p-6 border border-gray-200 rounded-2xl bg-gray-50 flex flex-col items-center justify-between shadow-sm">
              <div className="text-center mb-6">
-                <span className="block text-xl font-bold text-gray-900 mb-1">Kategorie B</span>
+                <span className="block text-xl font-bold text-gray-900 mb-1">
+                  <div className="w-4 h-4 rounded-full bg-blue-500 shadow-sm inline-block mr-2"></div>
+                  Kategorie B
+                </span>
                 <span className="block text-sm text-gray-500 font-medium">{priceCatB.toFixed(2)} € pro Ticket</span>
              </div>
              <div className="flex items-center gap-5">
@@ -196,7 +202,10 @@ export function BookingFlow() {
            {/* Student */}
            <div className="p-6 border border-gray-200 rounded-2xl bg-gray-50 flex flex-col items-center justify-between shadow-sm">
              <div className="text-center mb-6">
-                <span className="block text-xl font-bold text-gray-900 mb-1">Student</span>
+                <span className="block text-xl font-bold text-gray-900 mb-1">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500 shadow-sm inline-block mr-2"></div>
+                  Student
+                </span>
                 <span className="block text-sm text-gray-500 font-medium">{priceStudent.toFixed(2)} € pro Ticket</span>
              </div>
              <div className="flex items-center gap-5">
@@ -229,6 +238,7 @@ export function BookingFlow() {
                  requiredSeats={totalTickets}
                  selectedSeats={selectedSeats}
                  onSeatSelect={setSelectedSeats}
+                 catCounts={{ catA, catB, student }}
                />
             </div>
           )}
