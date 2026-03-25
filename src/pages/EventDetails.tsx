@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { APP_ID } from '../lib/constants';
-import { Event, Partner, Seat } from '../types/schema';
+import { Event, Partner } from '../types/schema';
 import { createBooking } from '../services/bookingService';
 import { SeatingPlan } from '../components/seating/SeatingPlan';
 
