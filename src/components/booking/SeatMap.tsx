@@ -59,11 +59,11 @@ export function SeatMap({ eventId, requiredSeats, selectedSeats, onSeatSelect, c
       onSeatSelect(selectedSeats.filter(id => id !== seatId));
     } else {
       if (selectedSeats.length >= requiredSeats) {
-         // Auto-override last assigned seat array queue if overflow occurs
-         onSeatSelect([...selectedSeats.slice(1), seatId]);
-      } else {
-         onSeatSelect([...selectedSeats, seatId]);
+         // Fix 3: Block selection instead of shifting array to keep colors stable
+         alert(`Sie haben bereits alle ${requiredSeats} Tickets zugewiesen. Bitte entfernen Sie zuerst einen Platz, um einen neuen zu wählen.`);
+         return;
       }
+      onSeatSelect([...selectedSeats, seatId]);
     }
   };
 
