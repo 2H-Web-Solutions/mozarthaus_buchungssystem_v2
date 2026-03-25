@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { SEATING_PLAN_TEMPLATE } from '../../config/seatingPlan';
 import { Seat } from '../../types/schema';
 import { SeatButton } from './SeatButton';
-import { getEventSeats } from '../../services/bookingService';
+import { getEventSeats, initializeEventSeats } from '../../services/bookingService';
 import { X } from 'lucide-react';
 
 interface Props {
@@ -17,11 +17,23 @@ export function SeatingPlan({ eventId, onSelectionChange }: Props) {
 
   useEffect(() => {
     // 1. Fetch from subcollection in real-time
-    const unsub = getEventSeats(eventId, (fetchedSeats) => {
+    const unsub = getEventSeats(eventId, async (fetchedSeats) => {
+      // Auto-fallback: If no seats exist for this event, generate them on the fly!
+      if (fetchedSeats.length === 0) {
+        setIsLoading(true);
+        try {
+          await initializeEventSeats(eventId);
+        } catch (err) {
+          console.error("Failed to auto-initialize seats:", err);
+          setIsLoading(false);
+        }
+        return; // The DB will trigger this snapshot callback again once seats are created.
+      }
+
       setSeats(fetchedSeats);
       setIsLoading(false);
       
-      // Auto-remove seats from user cart if they were booked in DB
+      // Auto-remove seats from user cart if they were booked somewhere else in DB
       setSelectedSeatIds(prev => {
         const validSelections = prev.filter(id => {
           const seat = fetchedSeats.find(s => s.id === id);
@@ -36,6 +48,7 @@ export function SeatingPlan({ eventId, onSelectionChange }: Props) {
         return validSelections;
       });
     });
+    
     return () => unsub();
   }, [eventId]);
 
@@ -55,7 +68,7 @@ export function SeatingPlan({ eventId, onSelectionChange }: Props) {
     return (
       <div className="flex flex-col gap-4 animate-pulse pt-10">
         {Array.from({length: 6}).map((_, i) => (
-           <div key={i} className="h-10 bg-gray-200 rounded-lg w-full max-w-2xl mx-auto"></div>
+           <div key={i} className="h-10 bg-gray-200 rounded-full w-full max-w-2xl mx-auto"></div>
         ))}
       </div>
     );
@@ -81,7 +94,6 @@ export function SeatingPlan({ eventId, onSelectionChange }: Props) {
             {rowBlueprint.elements.map((el, i) => {
               if (el.type === 'spacer') {
                 // width = number of missing seats (el.width) * seat_width (2.5rem) + (el.width - 1) * gap (0.5rem)
-                // Wait, seat width is 10 Tailwind units = 2.5rem. Gap is 2 units = 0.5rem.
                 const missingSeats = el.width;
                 const spacerWidth = (missingSeats * 2.5) + ((missingSeats - 1) * 0.5);
                 return <div key={`spacer-${rowBlueprint.rowId}-${i}`} style={{ width: `${spacerWidth}rem`, flexShrink: 0 }} />;
