@@ -22,7 +22,8 @@ export interface Booking {
   variantId?: string;
   partnerId: string | null;
   source: 'manual' | 'regiondo' | 'b2b';
-  status: 'confirmed' | 'cancelled' | 'pending';
+  status: 'confirmed' | 'cancelled' | 'pending' | 'paid';
+  paymentMethod?: 'bar' | 'karte' | 'voucher' | 'rechnung';
   seatIds?: string[];
   tickets?: { categoryId: string, quantity: number }[];
   customerData: {
