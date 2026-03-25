@@ -73,6 +73,20 @@ export function BookingKanban() {
     if (destination.droppableId === source.droppableId) return;
 
     const newStatus = destination.droppableId as 'pending' | 'paid' | 'cancelled';
+    
+    // Prevent un-cancelling
+    const draggedBooking = bookings.find(b => b.id === draggableId);
+    if (draggedBooking?.status === 'cancelled') {
+      alert('Stornierte Buchungen können nicht reaktiviert werden, da die Sitzplätze bereits permanent auf dem Saalplan freigegeben wurden.');
+      return;
+    }
+
+    if (newStatus === 'cancelled') {
+      const confirmCancel = window.confirm(
+        `Achtung: Möchten Sie die Buchung von ${draggedBooking?.customerData.name || 'Unbekannt'} wirklich stornieren?\n\nDadurch werden alle verknüpften Sitzplätze sofort wieder für den Verkauf freigegeben. Dieser Vorgang kann nicht rückgängig gemacht werden.`
+      );
+      if (!confirmCancel) return; // Abbruch durch den User
+    }
 
     if (newStatus === 'paid') {
       // Step 1: Open verification modal before committing transition
@@ -114,7 +128,7 @@ export function BookingKanban() {
             style={{ minHeight: '600px' }}
           >
             {items.map((booking, index) => (
-              <BookingCard key={booking.id} booking={booking} index={index} />
+              <BookingCard key={booking.id} booking={booking} index={index} partners={partners} />
             ))}
             {provided.placeholder}
           </div>

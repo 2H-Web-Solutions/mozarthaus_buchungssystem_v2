@@ -2,7 +2,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import { Booking } from '../../types/schema';
 import { Copy, Calendar, User, Ticket } from 'lucide-react';
 
-export function BookingCard({ booking, index }: { booking: Booking; index: number }) {
+export function BookingCard({ booking, index, partners }: { booking: Booking; index: number; partners?: {id: string, name: string}[] }) {
   const handleCopy = () => {
     navigator.clipboard.writeText(booking.id);
   };
@@ -11,8 +11,12 @@ export function BookingCard({ booking, index }: { booking: Booking; index: numbe
     ? booking.tickets.reduce((acc, t) => acc + t.quantity, 0) 
     : booking.seatIds?.length || 0;
 
+  const partnerName = booking.isB2B && booking.partnerId && partners 
+    ? partners.find(p => p.id === booking.partnerId)?.name || 'Unbekannter Partner'
+    : null;
+
   return (
-    <Draggable draggableId={booking.id} index={index}>
+    <Draggable draggableId={booking.id} index={index} isDragDisabled={booking.status === 'cancelled'}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -38,10 +42,17 @@ export function BookingCard({ booking, index }: { booking: Booking; index: numbe
             </span>
           </div>
 
-          <p className="font-bold text-gray-900 flex items-center gap-2 mb-1 text-sm tracking-tight" title={booking.customerData.name}>
-            <User className="w-4 h-4 text-brand-primary shrink-0" />
-            <span className="truncate">{booking.source === 'b2b' && booking.partnerId ? `B2B: ${booking.partnerId}` : booking.customerData.name}</span>
-          </p>
+          <div className="font-bold text-gray-900 flex items-center justify-between gap-2 mb-1 text-sm tracking-tight" title={booking.customerData.name}>
+            <div className="flex items-center gap-2 truncate">
+              <User className="w-4 h-4 text-brand-primary shrink-0" />
+              <span className="truncate">{booking.customerData.name}</span>
+            </div>
+            {partnerName && (
+              <span className="shrink-0 px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded uppercase tracking-widest border border-blue-200 truncate max-w-[100px]" title={partnerName}>
+                {partnerName}
+              </span>
+            )}
+          </div>
 
           <p className="text-xs text-gray-500 flex items-center gap-2 mb-4 font-medium" title={booking.eventId}>
             <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
