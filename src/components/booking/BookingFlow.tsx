@@ -50,7 +50,8 @@ export function BookingFlow() {
     if (selectedSeats.length > total) {
       setSelectedSeats(prev => prev.slice(0, total));
     }
-  }, [catA, catB, student, selectedSeats.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catA, catB, student]);
 
   useEffect(() => {
     const fetchPartnersData = async () => {
