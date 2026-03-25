@@ -1,4 +1,4 @@
-import { doc, runTransaction, writeBatch, Timestamp, collection, query, onSnapshot } from 'firebase/firestore';
+import { doc, runTransaction, writeBatch, Timestamp, collection, query, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { APP_ID } from '../lib/constants';
 import { SEATING_PLAN_TEMPLATE } from '../config/seatingPlan';
@@ -107,16 +107,18 @@ export async function cancelBooking(bookingId: string) {
       const booking = bookingDoc.data() as Booking;
       if (booking.status === 'cancelled') return;
 
-      const seatsColPath = `${getAppPath()}/events/${booking.eventId}/seats`;
-      const seatRefs = booking.seatIds.map(id => doc(db, seatsColPath, id));
+      if (booking.seatIds && booking.seatIds.length > 0) {
+        const seatsColPath = `${getAppPath()}/events/${booking.eventId}/seats`;
+        const seatRefs = booking.seatIds.map(id => doc(db, seatsColPath, id));
 
-      // Reset seats
-      seatRefs.forEach(ref => {
-        transaction.update(ref, {
-          status: 'available',
-          bookingId: null
+        // Reset seats
+        seatRefs.forEach(ref => {
+          transaction.update(ref, {
+            status: 'available',
+            bookingId: null
+          });
         });
-      });
+      }
 
       // Cancel booking
       transaction.update(bookingRef, { status: 'cancelled' });
@@ -141,4 +143,27 @@ export function getEventSeats(eventId: string, callback: (seats: Seat[]) => void
     });
     callback(seats);
   });
+}
+
+/**
+ * Creates a variant-based booking without assigning specific seats (B2B/Regiondo ticket flow)
+ */
+export async function createVariantBooking(bookingData: Omit<Booking, 'id' | 'createdAt'>) {
+  const bookingId = `booking_${bookingData.eventId}_${Date.now()}`;
+  const bookingRef = doc(db, `${getAppPath()}/bookings`, bookingId);
+
+  try {
+    await runTransaction(db, async (transaction) => {
+       const newBooking: Booking = {
+         ...bookingData,
+         id: bookingId,
+         createdAt: Timestamp.now()
+       };
+       transaction.set(bookingRef, newBooking);
+    });
+    return bookingId;
+  } catch (error) {
+    console.error('Variant booking transaction failed: ', error);
+    throw error;
+  }
 }

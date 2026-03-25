@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, CalendarDays, Calendar, Users, Settings as SettingsIcon } from 'lucide-react';
+import { Home, CalendarDays, Calendar, Users, Settings as SettingsIcon, LayoutDashboard, Ticket } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -29,7 +29,8 @@ export function Sidebar() {
   }, []);
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: Home },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Neue Reservierung', path: '/new-booking', icon: Ticket },
     { name: 'Events', path: '/events', icon: CalendarDays },
     { name: 'Buchungen', path: '/bookings', icon: Calendar },
     { name: 'Partner', path: '/partners', icon: Users },

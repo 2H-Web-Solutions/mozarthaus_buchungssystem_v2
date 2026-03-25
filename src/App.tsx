@@ -7,6 +7,7 @@ import { Events } from './pages/Events';
 import { EventDetails } from './pages/EventDetails';
 import { Bookings } from './pages/Bookings';
 import { Partners } from './pages/Partners';
+import { BookingFlow } from './components/booking/BookingFlow';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="events" element={<Events />} />
           <Route path="events/:id" element={<EventDetails />} />
+          <Route path="new-booking" element={<BookingFlow />} />
           <Route path="bookings" element={<Bookings />} />
           <Route path="partners" element={<Partners />} />
           <Route path="tasks" element={<Tasks />} />

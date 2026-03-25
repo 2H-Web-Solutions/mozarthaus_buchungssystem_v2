@@ -19,10 +19,12 @@ export interface Seat {
 export interface Booking {
   id: string;
   eventId: string;
+  variantId?: string;
   partnerId: string | null;
   source: 'manual' | 'regiondo' | 'b2b';
-  status: 'confirmed' | 'cancelled';
-  seatIds: string[];
+  status: 'confirmed' | 'cancelled' | 'pending';
+  seatIds?: string[];
+  tickets?: { categoryId: string, quantity: number }[];
   customerData: {
     name: string;
     email: string;
@@ -37,4 +39,5 @@ export interface Partner {
   type: 'b2b' | 'agency';
   contactPerson: string;
   email: string;
+  commissionRate?: number;
 }
