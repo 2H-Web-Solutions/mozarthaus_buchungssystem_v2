@@ -15,8 +15,9 @@ export function EventMusikerAssignment({ event, musikerList }: Props) {
   const [ensemble, setEnsemble] = useState<EventEnsembleMember[]>(event.ensemble || []);
   const [isSaving, setIsSaving] = useState(false);
 
-  // We ensure exactly 5 rows are rendered
-  const rows = Array.from({ length: 5 }, (_, i) => ensemble[i] || { musikerId: '', gage: 0, status: 'bestätigt', instrument: '', name: '' });
+  // We ensure at least 5 rows are rendered, without truncating larger ensembles
+  const minRows = Math.max(5, ensemble.length);
+  const rows = Array.from({ length: minRows }, (_, i) => ensemble[i] || { musikerId: '', gage: 0, status: 'bestätigt', instrument: '', name: '' });
 
   const handleChange = (index: number, field: keyof EventEnsembleMember, value: any) => {
     const newEnsemble = [...rows];
@@ -65,7 +66,9 @@ export function EventMusikerAssignment({ event, musikerList }: Props) {
               className="flex-1 p-2 border border-gray-300 rounded text-sm focus:ring-brand-primary focus:border-brand-primary bg-gray-50"
             >
               <option value="">-- Musiker wählen --</option>
-              {musikerList.map(m => (
+              {musikerList
+                .filter(m => m.art === 'Musiker' || m.id === row.musikerId)
+                .map(m => (
                  <option key={m.id} value={m.id}>{m.vorname} {m.nachname} {(m.instrument) ? `(${m.instrument})` : ''}</option>
               ))}
             </select>
