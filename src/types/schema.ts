@@ -46,6 +46,7 @@ export interface Booking {
   };
   eventDate?: string; // Optional: The human-readable date string of the event (e.g. 21.05.2024)
   dateTime?: string; // Optional: The human-readable timestamp of the event for display
+  categoryId?: string; // NEU: Category ID from Regiondo
   eventTitle?: string;
   totalAmount: number;
   regiondoProductId?: string | number; // NEU: Die Event-ID für Regiondo

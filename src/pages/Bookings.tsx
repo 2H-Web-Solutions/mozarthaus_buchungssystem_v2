@@ -88,91 +88,93 @@ export function Bookings() {
         </div>
       </div>
 
-      <div className="overflow-x-auto w-full bg-white shadow-sm rounded-b-lg border border-gray-200">
-        <table className="w-full text-left border-collapse text-sm min-w-[1000px]">
-          <thead>
-            <tr className="bg-gray-100 border-b border-gray-300 text-xs font-bold text-gray-700 uppercase tracking-wider">
-              <th className="p-3 border-r border-gray-200">ID</th>
-              <th className="p-3 border-r border-gray-200">Erstellt am</th>
-              <th className="p-3 border-r border-gray-200">Event / Datum</th>
-              <th className="p-3 border-r border-gray-200">Name</th>
-              <th className="p-3 border-r border-gray-200">E-Mail</th>
-              <th className="p-3 border-r border-gray-200">Tickets</th>
-              <th className="p-3 border-r border-gray-200">Betrag</th>
-              <th className="p-3 border-r border-gray-200">Quelle</th>
-              <th className="p-3 border-r border-gray-200">Status</th>
-              <th className="p-3">Aktion</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-             {filteredBookings.length === 0 ? (
-               <tr><td colSpan={10} className="p-8 text-center text-gray-500">Keine Buchungen gefunden.</td></tr>
-             ) : filteredBookings.map(b => (
-               <tr key={b.id} className="hover:bg-gray-50 transition-colors">
-                 <td className="p-3 border-r border-gray-200 font-mono text-xs text-gray-600 max-w-[120px] truncate" title={b.id || 'N/A'}>
-                   {b.id?.replace('booking_regiondo_', '') || b.id || 'IMPORT'}
-                 </td>
-                 <td className="p-3 border-r border-gray-200 whitespace-nowrap text-gray-700">
-                   {(b.createdAt as any)?.toDate 
-                     ? (b.createdAt as any).toDate().toLocaleString('de-AT') 
-                     : new Date(b.createdAt as any).toLocaleString('de-AT')}
-                 </td>
-                 <td className="p-3 border-r border-gray-200">
-                   <div className="font-medium text-brand-primary">{String(b.eventId || '')}</div>
-                   {b.dateTime && (
-                     <div className="text-xs text-gray-500">
-                       {typeof b.dateTime === 'object' && (b.dateTime as any).toDate
-                         ? (b.dateTime as any).toDate().toLocaleString('de-AT')
-                         : String(b.dateTime)}
+        <div className="overflow-auto max-h-[calc(100vh-180px)] w-full bg-white shadow-sm rounded-lg border border-gray-200 relative">
+          <table className="w-full text-left border-collapse text-sm min-w-[1200px]">
+            <thead className="sticky top-0 bg-gray-100 z-10 shadow-sm">
+              <tr className="border-b border-gray-300 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                <th className="p-3 border-r border-gray-200 bg-gray-100">ID</th>
+                <th className="p-3 border-r border-gray-200 bg-gray-100">Erstellt am</th>
+                <th className="p-3 border-r border-gray-200 bg-gray-100">Event / Datum</th>
+                <th className="p-3 border-r border-gray-200 bg-gray-100">Kunde</th>
+                <th className="p-3 border-r border-gray-200 bg-gray-100">Kontakt</th>
+                <th className="p-3 border-r border-gray-200 bg-gray-100">Tickets / Kat.</th>
+                <th className="p-3 border-r border-gray-200 bg-gray-100">Betrag</th>
+                <th className="p-3 border-r border-gray-200 bg-gray-100">Quelle</th>
+                <th className="p-3 border-r border-gray-200 bg-gray-100">Status</th>
+                <th className="p-3 bg-gray-100">Aktion</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+               {filteredBookings.length === 0 ? (
+                 <tr><td colSpan={10} className="p-8 text-center text-gray-500">Keine Buchungen gefunden.</td></tr>
+               ) : filteredBookings.map(b => (
+                 <tr key={b.id} className="hover:bg-gray-50 transition-colors">
+                   <td className="p-3 border-r border-gray-200 font-mono text-xs text-gray-600 break-all min-w-[140px]">
+                     {b.id?.replace('booking_regiondo_', '') || b.id}
+                   </td>
+                   <td className="p-3 border-r border-gray-200 whitespace-nowrap text-gray-700">
+                     {(b.createdAt as any)?.toDate 
+                       ? (b.createdAt as any).toDate().toLocaleString('de-AT') 
+                       : new Date(b.createdAt as any).toLocaleString('de-AT')}
+                   </td>
+                   <td className="p-3 border-r border-gray-200 min-w-[180px]">
+                     <div className="font-medium text-brand-primary">{b.eventId}</div>
+                     {b.dateTime && <div className="text-xs text-gray-500">{typeof b.dateTime === 'object' && (b.dateTime as any).toDate ? (b.dateTime as any).toDate().toLocaleString('de-AT') : String(b.dateTime)}</div>}
+                   </td>
+                   <td className="p-3 border-r border-gray-200 font-medium text-gray-900 min-w-[140px]">
+                     {b.customerData?.name || '-'}
+                   </td>
+                   <td className="p-3 border-r border-gray-200 text-gray-600 min-w-[160px]">
+                     <div>{b.customerData?.email || '-'}</div>
+                     {b.customerData?.phone && <div className="text-xs text-gray-400 mt-0.5">{b.customerData.phone}</div>}
+                   </td>
+                   <td className="p-3 border-r border-gray-200 min-w-[140px]">
+                     <div className="font-medium">
+                       {b.bookingType === 'gruppe' || b.groupPersons ? (
+                         <span>{b.groupPersons} Personen</span>
+                       ) : b.seatIds && b.seatIds.length > 0 ? (
+                         <span>{b.seatIds.length} Plätze</span>
+                       ) : b.tickets && b.tickets.length > 0 ? (
+                         <span>{b.tickets.reduce((sum: number, t: any) => sum + (t.quantity || 1), 0)} Tickets</span>
+                       ) : (
+                         <span className="text-gray-400">0</span>
+                       )}
                      </div>
-                   )}
-                 </td>
-                 <td className="p-3 border-r border-gray-200 font-medium text-gray-900">
-                   {b.customerData?.name || '-'}
-                 </td>
-                 <td className="p-3 border-r border-gray-200 text-gray-600">
-                   {b.customerData?.email || '-'}
-                 </td>
-                 <td className="p-3 border-r border-gray-200 whitespace-nowrap">
-                   {b.bookingType === 'gruppe' || b.groupPersons ? (
-                     <span className="font-medium">{b.groupPersons} Personen</span>
-                   ) : b.seatIds && b.seatIds.length > 0 ? (
-                     <span className="font-medium">{b.seatIds.length} Plätze</span>
-                   ) : b.tickets && b.tickets.length > 0 ? (
-                     <span className="font-medium">{b.tickets.reduce((sum: number, t: any) => sum + (t.quantity || 1), 0)} Tickets</span>
-                   ) : (
-                     <span className="text-gray-400">0</span>
-                   )}
-                 </td>
-                 <td className="p-3 border-r border-gray-200 font-bold whitespace-nowrap">
-                   € {calculateTotal(b).toFixed(2)}
-                 </td>
-                 <td className="p-3 border-r border-gray-200">
-                   <span className="px-2 py-1 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase">
-                     {b.source || 'MANUELL'}
-                   </span>
-                 </td>
-                 <td className="p-3 border-r border-gray-200">
-                   <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase border ${b.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' : b.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
-                     {b.status || 'UNKNOWN'}
-                   </span>
-                 </td>
-                 <td className="p-3 text-right">
-                   {b.status === 'confirmed' && (
-                     <button 
-                       onClick={() => handleCancel(b.id)}
-                       disabled={isCancelling === b.id}
-                       className="text-red-600 hover:text-red-800 text-xs font-bold disabled:opacity-50"
-                     >
-                       {isCancelling === b.id ? '...' : 'Stornieren'}
-                     </button>
-                   )}
-                 </td>
-               </tr>
-             ))}
-          </tbody>
-        </table>
-      </div>
+                     {(b.categoryId || (b.tickets && b.tickets[0]?.categoryId)) && (
+                       <div className="text-xs text-gray-500 mt-1 uppercase">
+                         Kat: {b.categoryId || b.tickets?.[0]?.categoryId}
+                       </div>
+                     )}
+                   </td>
+                   <td className="p-3 border-r border-gray-200 font-bold whitespace-nowrap">
+                     € {calculateTotal(b).toFixed(2)}
+                   </td>
+                   <td className="p-3 border-r border-gray-200">
+                     <span className="px-2 py-1 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase">
+                       {b.source || 'MANUELL'}
+                     </span>
+                   </td>
+                   <td className="p-3 border-r border-gray-200">
+                     <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase border ${b.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' : b.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+                       {b.status || 'UNKNOWN'}
+                     </span>
+                   </td>
+                   <td className="p-3 text-right">
+                     {b.status === 'confirmed' && (
+                       <button 
+                         onClick={() => handleCancel(b.id)}
+                         disabled={isCancelling === b.id}
+                         className="text-red-600 hover:text-red-800 text-xs font-bold disabled:opacity-50"
+                       >
+                         {isCancelling === b.id ? '...' : 'Stornieren'}
+                       </button>
+                     )}
+                   </td>
+                 </tr>
+               ))}
+            </tbody>
+          </table>
+        </div>
     </div>
   );
 }
