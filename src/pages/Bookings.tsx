@@ -109,8 +109,8 @@ export function Bookings() {
                <tr><td colSpan={10} className="p-8 text-center text-gray-500">Keine Buchungen gefunden.</td></tr>
              ) : filteredBookings.map(b => (
                <tr key={b.id} className="hover:bg-gray-50 transition-colors">
-                 <td className="p-3 border-r border-gray-200 font-mono text-xs text-gray-600 max-w-[120px] truncate" title={b.id}>
-                   {b.id?.replace('booking_regiondo_', '') || b.id}
+                 <td className="p-3 border-r border-gray-200 font-mono text-xs text-gray-600 max-w-[120px] truncate" title={b.id || 'N/A'}>
+                   {b.id?.replace('booking_regiondo_', '') || b.id || 'IMPORT'}
                  </td>
                  <td className="p-3 border-r border-gray-200 whitespace-nowrap text-gray-700">
                    {(b.createdAt as any)?.toDate 
@@ -118,8 +118,14 @@ export function Bookings() {
                      : new Date(b.createdAt as any).toLocaleString('de-AT')}
                  </td>
                  <td className="p-3 border-r border-gray-200">
-                   <div className="font-medium text-brand-primary">{b.eventId}</div>
-                   {b.dateTime && <div className="text-xs text-gray-500">{b.dateTime}</div>}
+                   <div className="font-medium text-brand-primary">{String(b.eventId || '')}</div>
+                   {b.dateTime && (
+                     <div className="text-xs text-gray-500">
+                       {typeof b.dateTime === 'object' && (b.dateTime as any).toDate
+                         ? (b.dateTime as any).toDate().toLocaleString('de-AT')
+                         : String(b.dateTime)}
+                     </div>
+                   )}
                  </td>
                  <td className="p-3 border-r border-gray-200 font-medium text-gray-900">
                    {b.customerData?.name || '-'}
