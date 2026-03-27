@@ -17,6 +17,10 @@ export function Partners() {
   const [email, setEmail] = useState('');
   const [type, setType] = useState<string>('');
   const [partnerTypes, setPartnerTypes] = useState<{id: string, name: string}[]>([]);
+  const [merchantNr, setMerchantNr] = useState('');
+  const [strasse, setStrasse] = useState('');
+  const [ort, setOrt] = useState('');
+  const [commissionRate, setCommissionRate] = useState<number | ''>('');
 
   useEffect(() => {
     const fetchPartnerTypes = async () => {
@@ -66,12 +70,21 @@ export function Partners() {
       } else {
         setType('');
       }
+      setMerchantNr('');
+      setStrasse('');
+      setOrt('');
+      setCommissionRate('');
 
       await setDoc(doc(db, `apps/${APP_ID}/partners`, slugId), {
         companyName,
         contactPerson,
         email,
-        type
+        type,
+        merchantNr,
+        strasse,
+        ort,
+        commissionRate: Number(commissionRate) || 0,
+        aktiv: true
       });
     } catch(err) {
       alert('Fehler beim Speichern');
@@ -139,33 +152,55 @@ export function Partners() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-           <div className="bg-white p-6 rounded-lg w-full max-w-md">
+         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+           <div className="bg-white p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
              <h2 className="text-xl font-heading text-brand-primary mb-4">Neuen Partner anlegen</h2>
              <form onSubmit={handleCreate} className="space-y-4">
-               <div>
-                  <label className="block text-sm text-gray-700 mb-1">Firmenname</label>
-                  <input autoFocus required type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary" placeholder="z.B. GetYourGuide GmbH" />
-               </div>
-               <div>
-                  <label className="block text-sm text-gray-700 mb-1">Typ</label>
-                  <select value={type} onChange={e => setType(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary">
-                    {partnerTypes.length === 0 && <option value="">Keine Typen angelegt</option>}
-                    {partnerTypes.map(pt => (
-                      <option key={pt.id} value={pt.id}>{pt.name}</option>
-                    ))}
-                  </select>
-               </div>
-               <div>
-                  <label className="block text-sm text-gray-700 mb-1">Ansprechpartner</label>
-                  <input type="text" value={contactPerson} onChange={e => setContactPerson(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary" />
-               </div>
-               <div>
-                  <label className="block text-sm text-gray-700 mb-1">Email</label>
-                  <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary" />
-               </div>
                
-               <div className="flex gap-3 justify-end mt-6">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                    <label className="block text-sm text-gray-700 mb-1">Firmenname</label>
+                    <input autoFocus required type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary" placeholder="z.B. GetYourGuide GmbH" />
+                 </div>
+                 <div>
+                    <label className="block text-sm text-gray-700 mb-1">Typ</label>
+                    <select value={type} onChange={e => setType(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary">
+                      {partnerTypes.length === 0 && <option value="">Keine Typen angelegt</option>}
+                      {partnerTypes.map(pt => (
+                        <option key={pt.id} value={pt.id}>{pt.name}</option>
+                      ))}
+                    </select>
+                 </div>
+                 
+                 <div>
+                    <label className="block text-sm text-gray-700 mb-1">Ansprechpartner</label>
+                    <input type="text" value={contactPerson} onChange={e => setContactPerson(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary" />
+                 </div>
+                 <div>
+                    <label className="block text-sm text-gray-700 mb-1">Email</label>
+                    <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary" />
+                 </div>
+
+                 <div>
+                    <label className="block text-sm text-gray-700 mb-1">Merchant Nr.</label>
+                    <input type="text" value={merchantNr} onChange={e => setMerchantNr(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary" />
+                 </div>
+                 <div>
+                    <label className="block text-sm text-gray-700 mb-1">Provisionssatz (%)</label>
+                    <input type="number" step="0.01" value={commissionRate} onChange={e => setCommissionRate(e.target.value === '' ? '' : Number(e.target.value))} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary" placeholder="z.B. 15" />
+                 </div>
+
+                 <div>
+                    <label className="block text-sm text-gray-700 mb-1">Straße</label>
+                    <input type="text" value={strasse} onChange={e => setStrasse(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary" />
+                 </div>
+                 <div>
+                    <label className="block text-sm text-gray-700 mb-1">PLZ / Ort</label>
+                    <input type="text" value={ort} onChange={e => setOrt(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:border-brand-primary focus:ring-1 focus:ring-brand-primary" />
+                 </div>
+               </div>
+
+               <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-100">
                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Abbrechen</button>
                  <button disabled={isSaving} type="submit" className="px-4 py-2 bg-brand-primary text-white rounded hover:bg-red-700 disabled:opacity-50">
                    {isSaving ? 'Speichert...' : 'Partner anlegen'}

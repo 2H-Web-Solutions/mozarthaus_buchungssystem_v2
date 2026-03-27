@@ -362,14 +362,14 @@ export async function runPartnerImport() {
     return {
       id: `partner_${id}`,
       data: {
-        firmenname: companyName,
-        type: 'import_partner', // generic type
+        companyName: companyName, // FIXED: was firmenname
+        type: 'import_partner',
         art,
         merchantNr,
         strasse,
         ort,
         email,
-        provisionsSatz: commissionRate,
+        commissionRate: commissionRate, // FIXED: was provisionsSatz
         aktiv: true
       }
     };

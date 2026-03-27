@@ -15,6 +15,7 @@ export function EnsembleModal({ event, onClose }: EnsembleModalProps) {
   const [musikerList, setMusikerList] = useState<Musiker[]>([]);
   const [ensemble, setEnsemble] = useState<EventEnsembleMember[]>(event.ensemble || []);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'Musiker' | 'Mitarbeiter'>('Musiker');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -61,10 +62,27 @@ export function EnsembleModal({ event, onClose }: EnsembleModalProps) {
     }
   };
 
-  const availableMusiker = musikerList.filter(m => 
+  const filteredByType = musikerList.filter(m => {
+    if (activeTab === 'Musiker') return m.art === 'Musiker';
+    if (activeTab === 'Mitarbeiter') return m.art === 'Mitarbeiter' || m.art === 'Dienstleister';
+    return false;
+  });
+
+  const availableMusiker = filteredByType.filter(m => 
     !ensemble.some(e => e.musikerId === m.id) &&
     (`${m.vorname} ${m.nachname} ${m.instrument || ''} ${m.art || ''}`.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Zuweisungen aufteilen für die linke Spalte
+  const getAssignedProps = (id: string) => musikerList.find(m => m.id === id);
+  const assignedMusiker = ensemble.filter(e => {
+    const p = getAssignedProps(e.musikerId);
+    return !p || p.art === 'Musiker'; // Fallback to Musiker if not loaded yet
+  });
+  const assignedMitarbeiter = ensemble.filter(e => {
+    const p = getAssignedProps(e.musikerId);
+    return p && (p.art === 'Mitarbeiter' || p.art === 'Dienstleister');
+  });
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6">
@@ -95,7 +113,7 @@ export function EnsembleModal({ event, onClose }: EnsembleModalProps) {
             <div className="p-5 border-b border-gray-100 bg-gray-50/80">
               <h3 className="font-bold text-gray-800 flex items-center gap-2">
                 <UserCheck className="w-5 h-5 text-green-600" />
-                Zugewiesene Musiker ({ensemble.length})
+                Zugewiesenes Personal ({ensemble.length})
               </h3>
             </div>
             
@@ -106,48 +124,109 @@ export function EnsembleModal({ event, onClose }: EnsembleModalProps) {
                   <p className="text-sm text-gray-400 mt-1">Wählen Sie Musiker aus der rechten Liste aus.</p>
                 </div>
               ) : (
-                ensemble.map((member) => (
-                  <div key={member.musikerId} className="bg-white border text-sm border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative group">
-                    <button 
-                      onClick={() => handleRemove(member.musikerId)}
-                      className="absolute top-3 right-3 p-1.5 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Entfernen"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    
-                    <div className="font-bold text-gray-900 text-base mb-3 pr-8">{member.name}</div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Rolle / Instrument</label>
-                        <input 
-                          type="text" 
-                          value={member.instrument}
-                          onChange={(e) => handleUpdateMember(member.musikerId, { instrument: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary bg-gray-50 focus:bg-white transition-colors"
-                          placeholder="z.B. 1. Violine"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Status</label>
-                        <select
-                          value={member.status}
-                          onChange={(e) => handleUpdateMember(member.musikerId, { status: e.target.value as any })}
-                          className={`w-full px-3 py-2 border border-gray-200 rounded-lg font-medium focus:ring-2 transition-colors ${
-                            member.status === 'bestätigt' ? 'bg-green-50 text-green-700 border-green-200 focus:ring-green-500/20 focus:border-green-500' : 
-                            member.status === 'abgesagt' ? 'bg-red-50 text-red-700 border-red-200 focus:ring-red-500/20 focus:border-red-500' : 
-                            'bg-yellow-50 text-yellow-700 border-yellow-200 focus:ring-yellow-500/20 focus:border-yellow-500'
-                          }`}
-                        >
-                          <option value="angefragt">Angefragt</option>
-                          <option value="bestätigt">Bestätigt</option>
-                          <option value="abgesagt">Abgesagt</option>
-                        </select>
+                <>
+                  {/* Block 1: Zugewiesene Musiker */}
+                  {assignedMusiker.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-bold text-gray-500 mb-3 border-b border-gray-100 pb-2">Musiker ({assignedMusiker.length})</h4>
+                      <div className="space-y-3">
+                        {assignedMusiker.map((member) => (
+                          <div key={member.musikerId} className="bg-white border text-sm border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative group">
+                            <button 
+                              onClick={() => handleRemove(member.musikerId)}
+                              className="absolute top-3 right-3 p-1.5 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Entfernen"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            
+                            <div className="font-bold text-gray-900 text-base mb-3 pr-8">{member.name}</div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Rolle / Instrument</label>
+                                <input 
+                                  type="text" 
+                                  value={member.instrument}
+                                  onChange={(e) => handleUpdateMember(member.musikerId, { instrument: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary bg-gray-50 focus:bg-white transition-colors"
+                                  placeholder="z.B. 1. Violine"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Status</label>
+                                <select
+                                  value={member.status}
+                                  onChange={(e) => handleUpdateMember(member.musikerId, { status: e.target.value as any })}
+                                  className={`w-full px-3 py-2 border border-gray-200 rounded-lg font-medium focus:ring-2 transition-colors ${
+                                    member.status === 'bestätigt' ? 'bg-green-50 text-green-700 border-green-200 focus:ring-green-500/20 focus:border-green-500' : 
+                                    member.status === 'abgesagt' ? 'bg-red-50 text-red-700 border-red-200 focus:ring-red-500/20 focus:border-red-500' : 
+                                    'bg-yellow-50 text-yellow-700 border-yellow-200 focus:ring-yellow-500/20 focus:border-yellow-500'
+                                  }`}
+                                >
+                                  <option value="angefragt">Angefragt</option>
+                                  <option value="bestätigt">Bestätigt</option>
+                                  <option value="abgesagt">Abgesagt</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                ))
+                  )}
+
+                  {/* Block 2: Zugewiesene Mitarbeiter/Dienstleister */}
+                  {assignedMitarbeiter.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-500 mb-3 border-b border-gray-100 pb-2">Mitarbeiter & Dienstleister ({assignedMitarbeiter.length})</h4>
+                      <div className="space-y-3">
+                        {assignedMitarbeiter.map((member) => (
+                          <div key={member.musikerId} className="bg-white border text-sm border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative group">
+                            <button 
+                              onClick={() => handleRemove(member.musikerId)}
+                              className="absolute top-3 right-3 p-1.5 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Entfernen"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            
+                            <div className="font-bold text-gray-900 text-base mb-3 pr-8">{member.name}</div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Rolle / Position</label>
+                                <input 
+                                  type="text" 
+                                  value={member.instrument}
+                                  onChange={(e) => handleUpdateMember(member.musikerId, { instrument: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary bg-gray-50 focus:bg-white transition-colors"
+                                  placeholder="z.B. Garderobe, Techniker"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Status</label>
+                                <select
+                                  value={member.status}
+                                  onChange={(e) => handleUpdateMember(member.musikerId, { status: e.target.value as any })}
+                                  className={`w-full px-3 py-2 border border-gray-200 rounded-lg font-medium focus:ring-2 transition-colors ${
+                                    member.status === 'bestätigt' ? 'bg-green-50 text-green-700 border-green-200 focus:ring-green-500/20 focus:border-green-500' : 
+                                    member.status === 'abgesagt' ? 'bg-red-50 text-red-700 border-red-200 focus:ring-red-500/20 focus:border-red-500' : 
+                                    'bg-yellow-50 text-yellow-700 border-yellow-200 focus:ring-yellow-500/20 focus:border-yellow-500'
+                                  }`}
+                                >
+                                  <option value="angefragt">Angefragt</option>
+                                  <option value="bestätigt">Bestätigt</option>
+                                  <option value="abgesagt">Abgesagt</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -155,7 +234,32 @@ export function EnsembleModal({ event, onClose }: EnsembleModalProps) {
           {/* Right Side: Available Musiker */}
           <div className="flex-1 flex flex-col min-h-0 bg-white">
             <div className="p-5 border-b border-gray-100 bg-gray-50/80">
-              <h3 className="font-bold text-gray-800 mb-3">Verfügbare Musiker</h3>
+              <h3 className="font-bold text-gray-800 mb-4">Verfügbare {activeTab}</h3>
+
+              {/* Tabs */}
+              <div className="flex space-x-4 mb-4 border-b border-gray-200">
+                <button
+                  onClick={() => setActiveTab('Musiker')}
+                  className={`py-2 px-4 font-medium text-sm transition-colors border-b-2 ${
+                    activeTab === 'Musiker' 
+                      ? 'border-brand-primary text-brand-primary font-bold' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Musiker
+                </button>
+                <button
+                  onClick={() => setActiveTab('Mitarbeiter')}
+                  className={`py-2 px-4 font-medium text-sm transition-colors border-b-2 ${
+                    activeTab === 'Mitarbeiter' 
+                      ? 'border-brand-primary text-brand-primary font-bold' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Mitarbeiter
+                </button>
+              </div>
+
               <div className="relative">
                 <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input 
