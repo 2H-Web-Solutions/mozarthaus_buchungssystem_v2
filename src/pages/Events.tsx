@@ -4,6 +4,7 @@ import { collection, onSnapshot, doc, writeBatch, Timestamp, query, where } from
 import { db } from '../lib/firebase';
 import { APP_ID } from '../lib/constants';
 import { Event } from '../types/schema';
+import { BulkEventGenerator } from '../components/BulkEventGenerator';
 import { CalendarPlus, RefreshCw } from 'lucide-react';
 import { syncMissingEvents } from '../utils/syncEventsFromBookings';
 import { initializeEventSeats } from '../services/bookingService';
@@ -108,9 +109,10 @@ export function Events() {
     if (!newEventTitle || !newEventDate) return;
     setIsCreating(true);
     
-    // Create robust slug matching rule #1
+    // Zeitzonen-sicheres ID-Matching (exakt wie n8n)
     const dateObj = new Date(newEventDate);
-    const dateStr = dateObj.toISOString().split('T')[0].replace(/-/g, '_');
+    // newEventDate kommt als "YYYY-MM-DDTHH:mm" aus dem Input. Wir nehmen exakt dieses Datum ohne UTC-Shift!
+    const dateStr = newEventDate.split('T')[0].replace(/-/g, '_');
     const titleSlug = newEventTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     const eventId = `${titleSlug}_${dateStr}`;
     
@@ -146,6 +148,7 @@ export function Events() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-heading text-brand-primary">Events & Konzerte</h1>
         <div className="flex gap-3">
+          <BulkEventGenerator onComplete={() => {}} />
           <button 
             onClick={handleSync}
             disabled={isSyncing}
