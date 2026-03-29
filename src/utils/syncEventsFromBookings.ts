@@ -8,30 +8,37 @@ export async function syncMissingEvents() {
     const bookingsSnap = await getDocs(collection(db, `apps/${APP_ID}/bookings`));
     const uniqueEvents = new Map();
 
-    // 1. Daten intelligent aus der eventId extrahieren (Format: slug_YYYY_MM_DD)
+    // 1. Daten intelligent aus der eventId und dem dateTime Timestamp extrahieren
     bookingsSnap.forEach(docSnap => {
       const data = docSnap.data();
-      if (data.eventId) {
-        const parts = data.eventId.split('_');
-        if (parts.length >= 4) {
-          const slug = parts[0]; // z.B. "mozart-ensemble"
-          const year = parts[1];
-          const month = parts[2];
-          const day = parts[3];
-          
-          const dateString = `${year}-${month}-${day}`;
-          const timeString = "20:00"; // Fixe lokale Zeit, um UTC-Shifts zu ignorieren
-          const dateTimeString = `${dateString}T${timeString}:00`;
-          
-          // Titel aus dem Slug generieren (z.B. "Mozart Ensemble")
-          const title = slug.split('-').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+      if (data.eventId && data.dateTime) {
+        
+        // Firestore Timestamp in JS Date umwandeln
+        let dateObj;
+        if (typeof data.dateTime.toDate === 'function') {
+          dateObj = data.dateTime.toDate();
+        } else {
+          dateObj = new Date(data.dateTime);
+        }
 
-          if (!uniqueEvents.has(data.eventId)) {
-            uniqueEvents.set(data.eventId, {
-              title: title,
-              dateString: dateTimeString,
-              time: timeString
-            });
+        if (dateObj && !isNaN(dateObj.getTime())) {
+          // Lokale Uhrzeit extrahieren (z.B. "18:00")
+          const hours = String(dateObj.getHours()).padStart(2, '0');
+          const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+          const timeString = `${hours}:${minutes}`;
+          
+          const parts = data.eventId.split('_');
+          if (parts.length >= 4) {
+            const slug = parts[0];
+            const title = slug.split('-').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+            if (!uniqueEvents.has(data.eventId)) {
+              uniqueEvents.set(data.eventId, {
+                title: title,
+                dateObj: dateObj,
+                time: timeString
+              });
+            }
           }
         }
       }
@@ -40,7 +47,7 @@ export async function syncMissingEvents() {
     let createdCount = 0;
     let initializedSeatsCount = 0;
     
-    // 2. Events in Batches (max 100) verarbeiten
+    // 2. Events in Batches verarbeiten
     const eventsArray = Array.from(uniqueEvents.entries());
     const chunkSize = 100;
     
@@ -54,8 +61,8 @@ export async function syncMissingEvents() {
         const eventSnap = await getDoc(eventRef);
 
         if (!eventSnap.exists()) {
-          // Event fehlt -> Neu anlegen
-          const eventTimestamp = Timestamp.fromDate(new Date(eventData.dateString));
+          // Event fehlt -> Neu anlegen mit ORIGINAL Uhrzeit aus Regiondo
+          const eventTimestamp = Timestamp.fromDate(eventData.dateObj);
           batch.set(eventRef, {
             title: eventData.title,
             date: eventTimestamp,
@@ -65,7 +72,7 @@ export async function syncMissingEvents() {
           seatsToInitialize.push(eventId);
           createdCount++;
         } else {
-          // Event existiert -> Prüfen ob Sitze fehlen
+          // Event existiert (z.B. manuell erstellt) -> Prüfen ob Sitze fehlen
           const seatsSnap = await getDocs(collection(db, `apps/${APP_ID}/events/${eventId}/seats`));
           if (seatsSnap.empty) {
             seatsToInitialize.push(eventId);
