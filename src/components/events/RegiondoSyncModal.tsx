@@ -18,7 +18,24 @@ export function RegiondoSyncModal({ isOpen, onClose }: RegiondoSyncModalProps) {
     e.preventDefault();
     if (!startDate || !endDate) return;
 
+    // Sicherheitsprüfung 1: Chronologie
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (end < start) {
+      toast.error('Fehler: Das Enddatum darf nicht vor dem Startdatum liegen.');
+      return;
+    }
+
+    // Sicherheitsprüfung 2: Maximal 3 Monate, um n8n-Timeouts zu verhindern
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays > 90) {
+      toast.error('Bitte wähle einen Zeitraum von maximal 90 Tagen (3 Monaten).');
+      return;
+    }
+
     setIsSyncing(true);
+    toast.loading('Bitte warten, Termine werden mit Regiondo abgeglichen. Dies kann einige Sekunden dauern.', { id: 'regiondo-sync' });
     
     const webhookUrl = import.meta.env.VITE_N8N_REGIONDO_SYNC_WEBHOOK_URL || 'https://up-seo-2025.app.n8n.cloud/webhook/regiondo-fetch-events';
 
@@ -36,13 +53,13 @@ export function RegiondoSyncModal({ isOpen, onClose }: RegiondoSyncModalProps) {
         throw new Error(`Netzwerk fehlerhaft: ${response.status} ${response.statusText}`);
       }
 
-      toast.success('Regiondo Sync gestartet! Die leeren Termine werden im Hintergrund in Firebase importiert.');
+      toast.success('Regiondo Sync gestartet! Die Termine werden im Hintergrund in Firebase importiert.', { id: 'regiondo-sync' });
       setStartDate('');
       setEndDate('');
       onClose();
     } catch (error) {
       console.error('Webhook Error:', error);
-      toast.error('Fehler beim Auslösen des Regiondo-Syncs. Bitte prüfen Sie den n8n-Webhook.');
+      toast.error('Fehler beim Auslösen des Regiondo-Syncs. Bitte pr\u00FCfen Sie den n8n-Webhook.', { id: 'regiondo-sync' });
     } finally {
       setIsSyncing(false);
     }
