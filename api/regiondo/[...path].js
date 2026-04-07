@@ -58,14 +58,25 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const pathParam = req.query.path;
-    const parts = Array.isArray(pathParam) ? pathParam : [pathParam].filter(Boolean);
-    if (!parts.length) {
+    const url = new URL(req.url, 'http://localhost');
+    const prefix = '/api/regiondo/';
+    let subPath = '';
+
+    if (url.pathname.startsWith(prefix)) {
+      subPath = url.pathname.slice(prefix.length).replace(/^\/+|\/+$/g, '');
+    }
+
+    // Fallback: some Vercel runtimes expose catch-all params via req.query.path.
+    if (!subPath) {
+      const pathParam = req.query.path;
+      const parts = Array.isArray(pathParam) ? pathParam : [pathParam].filter(Boolean);
+      subPath = parts.join('/').replace(/^\/+|\/+$/g, '');
+    }
+
+    if (!subPath) {
       return json(res, 400, { error: 'Missing Regiondo subpath' });
     }
-    const subPath = parts.join('/');
 
-    const url = new URL(req.url, 'http://localhost');
     const forwardParams = new URLSearchParams(url.search);
     const queryString = forwardParams.toString();
     const regiondoPath = `/v1/${subPath.replace(/^\/+/, '')}`;
