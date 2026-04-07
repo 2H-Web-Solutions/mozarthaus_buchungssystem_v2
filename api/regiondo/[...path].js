@@ -10,6 +10,10 @@ function normalizeHost(raw) {
   return `https://${t}`;
 }
 
+function cleanEnv(raw) {
+  return String(raw || '').trim();
+}
+
 function sign(publicKey, privateKey, queryString) {
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const source = timestamp + publicKey + queryString;
@@ -41,9 +45,9 @@ function json(res, status, payload) {
 }
 
 module.exports = async function handler(req, res) {
-  const publicKey = process.env.VITE_REGIONDO_PUBLIC_KEY || process.env.REGIONDO_PUBLIC_KEY || '';
-  const privateKey = process.env.VITE_REGIONDO_PRIVATE_KEY || process.env.REGIONDO_PRIVATE_KEY || '';
-  const regiondoHost = normalizeHost(process.env.VITE_REGIONDO_API_HOST || process.env.REGIONDO_API_HOST);
+  const publicKey = cleanEnv(process.env.VITE_REGIONDO_PUBLIC_KEY || process.env.REGIONDO_PUBLIC_KEY || '');
+  const privateKey = cleanEnv(process.env.VITE_REGIONDO_PRIVATE_KEY || process.env.REGIONDO_PRIVATE_KEY || '');
+  const regiondoHost = normalizeHost(cleanEnv(process.env.VITE_REGIONDO_API_HOST || process.env.REGIONDO_API_HOST));
 
   if (!publicKey || !privateKey) {
     return json(res, 503, {
@@ -113,6 +117,12 @@ module.exports = async function handler(req, res) {
     const contentType = upstream.headers.get('content-type') || 'application/json';
     res.status(upstream.status);
     res.setHeader('Content-Type', contentType);
+    res.setHeader('x-regiondo-proxy-host', regiondoHost);
+    res.setHeader(
+      'x-regiondo-proxy-key',
+      publicKey ? `${publicKey.slice(0, 4)}***${publicKey.slice(-3)}` : 'missing'
+    );
+    res.setHeader('x-regiondo-proxy-path', `/v1/${subPath.replace(/^\/+/, '')}`);
     res.send(text);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
